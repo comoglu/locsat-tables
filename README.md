@@ -32,8 +32,7 @@ The IASP91 velocity model has a Conrad discontinuity at a depth of 20 km. This i
 
 In order to ensure continuous Pg/Sg travel time tables spanning the distance range from 0 to 10 degrees and event depth range 0 to 35 km, we compute travel times using a constant IASP91 upper-crustal velocity of 5.8 km/s (vp) and 3.36 km/s (vs) slightly increasing with depth to match the libtau times where available. For many networks, 5.8 (3.36) km/s might not be the best choice [1] and by changing the velocities the Pg/Sg tables can easily be customized. But make sure you don't call them "iasp91" to avoid confusion.
 
-Note that 35 km event depth is currently a hard limit, but if necessary can be increased, too.
+Please note that the Pg/Sg tables are defaults for IASP91 and obviously don't give the most accurate locations for regions in which the crustal velocities deviate significantly from IASP91.
 
-There are surely better ways to generate regional Pg/Sg tables for crustal models different from iasp91!
 
 [1] https://doi.org/10.1111/j.1365-246X.2009.04109.x
