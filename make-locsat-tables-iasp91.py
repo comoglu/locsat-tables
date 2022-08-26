@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Can be either "iasp91" or "ak135".
-# Other models are NOT supported by the libtau version used by SC3.
+# Other models are NOT supported by the libtau version used by SC.
 model = "iasp91"
 prefix = model # for filename generation
 
@@ -28,6 +28,7 @@ extraComments = False
 #################################################################
 
 import sys
+import os
 from numpy import arange, array, concatenate
 
 # Use SC to compute the travel times
@@ -36,61 +37,73 @@ from seiscomp.seismology import TravelTimeTable
 ttt = TravelTimeTable()
 ttt.setModel(model)
 
+
 class Arrival:
     def __str__(self):
         return "%-12s %8.3f %8.5f %8.5f" % (arr.phase, arr.time, arr.dtdd, arr.toff)
 
-def computeTravelTimesSC3(delta, depth):
+def computeTravelTimesSC(delta, depth):
+    delta, depth = float(delta), float(depth)
     arrivals = ttt.compute(0, 0, depth, 0, delta, 0, 0)
     return arrivals
 
+regional_distances = [
+    0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6,
+    1.8, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5 ]
 
 distances = {
-    "P":      arange(181.),
-    "pP":     arange(20, 105, 1.),
-    "sP":     arange(20, 105, 1.),
-    "Pg":     arange(0, 10.2, 0.2),
-    "Pb":     arange(0, 9.5, 0.5),
-    "Pn":     arange(0, 20.5, 0.5),
-    "S":      arange(116.),
-    "Sb":     arange(0,  9.5, 0.5),
-    "Sg":     arange(0, 10.2, 0.2),
-    "Sn":     arange(0, 20.5, 0.5),
+    "P":      regional_distances + list(arange(0, 181,  1.)),
+    "Pg":     regional_distances + list(arange(0, 10.2, 0.2)),
+    "Pb":     regional_distances + list(arange(0,  9.5, 0.5)),
+    "Pn":     regional_distances + list(arange(0, 20.5, 0.5)),
+    "S":      regional_distances + list(arange(0, 116,  1.)),
+    "Sb":     regional_distances + list(arange(0,  9.5, 0.5)),
+    "Sg":     regional_distances + list(arange(0, 10.2, 0.2)),
+    "Sn":     regional_distances + list(arange(0, 20.5, 0.5)),
 
-    "PP":     arange( 30, 181, 1.),
-    "SS":     arange( 30, 181, 1.),
+    "pP":     arange( 20, 105, 1),
+    "sP":     arange( 20, 105, 1),
+    "sS":     arange( 20, 105, 1),
 
-    "PcP":    arange( 25,  61, 1.),
-    "ScS":    arange( 25,  61, 1.),
-    "ScP":    arange( 25,  61, 1.),
+    "PP":     arange( 30, 181, 1),
+    "SS":     arange( 30, 181, 1),
 
-    "PKP":    arange( 90, 181, 1.),
-    "PKPdf":  arange( 90, 181, 1.),
-    "PKPab":  arange(140, 181, 1.),
-    "PKPbc":  arange(140, 161, 1.),
-    "SKPdf":  arange( 90, 181, 1.),
-    "pPKPdf": arange( 90, 181, 1.),
-    "pPKPab": arange(140, 181, 1.),
-    "pPKPbc": arange(140, 161, 1.),
-    "sPKPdf": arange( 90, 181, 1.),
-    "sPKPab": arange(140, 181, 1.),
-    "sPKPbc": arange(140, 161, 1.),
+    "PcP":    arange( 25,  61, 1),
+    "ScS":    arange( 25,  61, 1),
+    "ScP":    arange( 25,  61, 1),
+
+    "PKP":    arange( 90, 181, 1),
+    "PKPdf":  arange( 90, 181, 1),
+    "PKPab":  arange(140, 181, 1),
+    "PKPbc":  arange(140, 161, 1),
+    "SKPdf":  arange( 90, 181, 1),
+    "pPKPdf": arange( 90, 181, 1),
+    "pPKPab": arange(140, 181, 1),
+    "pPKPbc": arange(140, 161, 1),
+    "sPKPdf": arange( 90, 181, 1),
+    "sPKPab": arange(140, 181, 1),
+    "sPKPbc": arange(140, 161, 1),
 }
 
 
-teleseismic_depths = [ 0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800 ]
+crustal_depths = [ 0, 5, 10, 15, 20, 25, 30, 35 ]
+
+teleseismic_depths = crustal_depths + [
+     40,  50,  75, 100, 150, 200, 250, 300, 350, 400,
+    450, 500, 550, 600, 650, 700, 750, 800 ]
 
 depths = {
     "P":      teleseismic_depths,
     "pP":     teleseismic_depths,
     "sP":     teleseismic_depths,
-    "Pg":     [ 0, 5, 10, 15, 20, 25, 30, 35 ],
-    "Pb":     [ 0, 5, 10, 15, 20, 25, 30, 35 ],
-    "Pn":     [ 0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 75, 100, 150, 200, 250, 300, 400],
+    "Pg":     crustal_depths,
+    "Pb":     crustal_depths,
+    "Pn":     crustal_depths + [ 40, 50, 75, 100, 150, 200, 250, 300, 400 ],
     "S":      teleseismic_depths,
-    "Sb":     [ 0, 5, 10, 15, 20, 25, 30, 35 ],
-    "Sg":     [ 0, 5, 10, 15, 20, 25, 30, 35 ],
-    "Sn":     [ 0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 75, 100, 150, 200, 250, 300, 400],
+    "sS":     teleseismic_depths,
+    "Sb":     crustal_depths,
+    "Sg":     crustal_depths,
+    "Sn":     crustal_depths + [ 40, 50, 75, 100, 150, 200, 250, 300, 400 ],
 
     "PP":     teleseismic_depths,
     "SS":     teleseismic_depths,
@@ -126,6 +139,7 @@ phaseCombinations = {
     # Note that there are gaps in the slope at the 
     # transitions Pg - Pb - Pn (not P - Pdiff)
     "P"    :  [ "Pg", "Pb", "Pn", "P", "Pdiff", "PKPdf" ],
+    "PKP"  :  [ "PKPab", "PKPbc", "PKPdf" ],
 
     "pP"   :  [ "pP", "pPn", "pPdiff" ],
     "sP"   :  [ "sP", "sPn", "sPdiff" ],
@@ -183,7 +197,7 @@ def create_table(phase):
             output += "# Travel time for z = %g km\n" % z
 
         for d in distances[phase]:
-            arrivals = computeTravelTimesSC3(d, z)
+            arrivals = computeTravelTimesSC(d, z)
             found = False
             for arr in arrivals:
                 if arr.phase in distanceLimits:
@@ -261,15 +275,26 @@ def create_table(phase):
     return output
 
 
-defaultPhaseSet = "P Pg Pb Pn Sg PP SS pP sP PKPab PKPbc PKPdf pPKPab pPKPbc pPKPdf sPKPab sPKPbc sPKPdf SKPdf PcP ScS ScP"
-
+defaultPhaseSet = """
+    P Pg Pb Pn S Sg Sb Sn
+    PP SS
+    pP sP sS
+    PKP PKPab PKPbc PKPdf pPKPab pPKPbc pPKPdf sPKPab sPKPbc sPKPdf SKPdf
+    PcP ScS ScP
+"""
 
 if sys.argv[1:]:
     phaseSet = sys.argv[1:]
 else:
-    phaseSet = defaultPhaseSet.split()
+    phaseSet = defaultPhaseSet.strip().split()
+
+try:
+    os.makedirs("tables")
+except FileExistsError:
+    pass
 
 for phase in phaseSet:
     table = create_table(phase)
-    with open(prefix + "." + phase, "w") as f:
+    filename = os.path.join("tables", prefix + "." + phase)
+    with open(filename, "w") as f:
         f.write(table)
